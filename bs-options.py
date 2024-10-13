@@ -9,6 +9,23 @@ import ctypes
 import win32con
 import win32api
 import configparser
+import tempfile
+import atexit
+
+# Créer un fichier temporaire pour indiquer que la fenêtre d'options est ouverte
+temp_file = tempfile.NamedTemporaryFile(prefix="bs_options_", delete=False)
+temp_file_path = temp_file.name
+temp_file.close()
+
+# Fonction pour supprimer le fichier temporaire à la fermeture du programme
+def cleanup_temp_file():
+    try:
+        os.remove(temp_file_path)
+    except:
+        pass
+
+# Enregistrer la fonction de nettoyage pour qu'elle soit appelée à la fermeture du programme
+atexit.register(cleanup_temp_file)
 
 class InterfaceCoordonnees:
     def __init__(self, master):
@@ -151,6 +168,10 @@ class InterfaceCoordonnees:
             HAUTEUR_FENETRE = self.HAUTEUR_FENETRE_var.get()
             placer_fenetre_mame(X, Y, LARGEUR_FENETRE, HAUTEUR_FENETRE)
             self.sauvegarder_parametres(X, Y, LARGEUR_FENETRE, HAUTEUR_FENETRE)
+            
+            # Créer un fichier temporaire pour signaler le changement
+            with open(temp_file_path, 'w') as f:
+                f.write('1')
         except ValueError:
             pass  # Ignorer les valeurs non valides
 

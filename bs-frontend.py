@@ -7,6 +7,7 @@ import win32con
 import time
 import threading
 import psutil
+import tempfile
 
 def lire_parametres():
     """Lit les paramètres de placement depuis le fichier variables.ini."""
@@ -164,7 +165,7 @@ info_apropos.fill(NOIR)
 info_apropos.set_alpha(200)
 texte_info = police.render("Programme créé par Mik", True, BLANC)
 texte_licence = police.render("Sous licence GPL 3.0", True, BLANC)
-texte_version = police.render("Version 1.0", True, BLANC)
+texte_version = police.render("Version 1.1", True, BLANC)
 info_apropos.blit(texte_info, (LARGEUR_FENETRE // 2 - texte_info.get_width() // 2, HAUTEUR_FENETRE // 2 - 50))
 info_apropos.blit(texte_licence, (LARGEUR_FENETRE // 2 - texte_licence.get_width() // 2, HAUTEUR_FENETRE // 2))
 info_apropos.blit(texte_version, (LARGEUR_FENETRE // 2 - texte_version.get_width() // 2, HAUTEUR_FENETRE // 2 + 50))
@@ -179,6 +180,11 @@ thread_mamewindow = threading.Thread(target=executer_mamewindow)
 thread_mamewindow.daemon = True
 thread_mamewindow.start()
 
+# Ajoutez cette fonction pour vérifier si la fenêtre d'options est ouverte
+def options_window_open():
+    temp_files = [f for f in os.listdir(tempfile.gettempdir()) if f.startswith("bs_options_")]
+    return len(temp_files) > 0
+
 # Boucle principale
 en_cours = True
 horloge = pygame.time.Clock()
@@ -192,10 +198,20 @@ afficher_apropos = False
 while en_cours:
     temps_ecoule = horloge.tick(FPS)
     
-    # Vérification périodique des paramètres de placement
-    if time.time() - derniere_verification > 1:
-        mettre_a_jour_fenetre()
-        derniere_verification = time.time()
+    if options_window_open():
+        temp_files = [f for f in os.listdir(tempfile.gettempdir()) if f.startswith("bs_options_")]
+        if temp_files:
+            temp_file_path = os.path.join(tempfile.gettempdir(), temp_files[0])
+            try:
+                with open(temp_file_path, 'r') as f:
+                    content = f.read().strip()
+                if content == '1':
+                    mettre_a_jour_fenetre()
+                    # Réinitialiser le contenu du fichier
+                    with open(temp_file_path, 'w') as f:
+                        f.write('0')
+            except:
+                pass
     
     for evenement in pygame.event.get():
         if evenement.type == pygame.QUIT:
